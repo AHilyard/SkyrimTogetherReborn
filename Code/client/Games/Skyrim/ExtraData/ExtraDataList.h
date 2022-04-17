@@ -1,11 +1,12 @@
 #pragma once
 
-#include "ExtraData.h"
-
+#include <Games/ExtraData.h>
 #include <ExtraData/ExtraSoul.h>
+#include <ExtraData/ExtraCharge.h>
 
-struct AlchemyItem;
-struct EnchantmentItem;
+#include <Forms/AlchemyItem.h>
+#include <Forms/EnchantmentItem.h>
+#include <Misc/MapMarkerData.h>
 
 struct ExtraDataList
 {
@@ -28,7 +29,8 @@ struct ExtraDataList
     void SetPoison(AlchemyItem* apItem, uint32_t aCount) noexcept;
     void SetHealth(float aHealth) noexcept;
     void SetEnchantmentData(EnchantmentItem* apItem, uint16_t aCharge, bool aRemoveOnUnequip) noexcept;
-    
+    void SetMarkerData(MapMarkerData* apMarkerData) noexcept;
+
     [[nodiscard]] bool HasQuestObjectAlias() noexcept;
 
 #if TP_SKYRIM64

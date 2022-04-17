@@ -1,3 +1,5 @@
+#include <TiltedOnlinePCH.h>
+
 #include "Forms/TESObjectCELL.h"
 #include "Forms/TESWorldSpace.h"
 #include "Services/PapyrusService.h"
@@ -10,6 +12,7 @@
 #include <Games/References.h>
 #include <Games/Misc/SubtitleManager.h>
 
+#include <ExtraData/ExtraLeveledCreature.h>
 #include <Forms/TESNPC.h>
 #include <Forms/TESQuest.h>
 
@@ -25,6 +28,9 @@
 #include <Events/UpdateEvent.h>
 #include <Events/ConnectedEvent.h>
 #include <Events/DisconnectedEvent.h>
+#include <Events/EquipmentChangeEvent.h>
+#include <Events/UpdateEvent.h>
+#include <Events/ProjectileLaunchedEvent.h>
 #include <Events/MountEvent.h>
 #include <Events/InitPackageEvent.h>
 #include <Events/LeaveBeastFormEvent.h>
@@ -49,6 +55,8 @@
 #include <Messages/RequestOwnershipTransfer.h>
 #include <Messages/NotifyOwnershipTransfer.h>
 #include <Messages/RequestOwnershipClaim.h>
+#include <Messages/ProjectileLaunchRequest.h>
+#include <Messages/NotifyProjectileLaunch.h>
 #include <Messages/MountRequest.h>
 #include <Messages/NotifyMount.h>
 #include <Messages/NewPackageRequest.h>
@@ -66,6 +74,10 @@
 
 #include <World.h>
 #include <Games/TES.h>
+
+#include <Projectiles/Projectile.h>
+#include <Forms/TESObjectWEAP.h>
+#include <Forms/TESAmmo.h>
 
 CharacterService::CharacterService(World& aWorld, entt::dispatcher& aDispatcher, TransportService& aTransport) noexcept
     : m_world(aWorld)
@@ -88,6 +100,9 @@ CharacterService::CharacterService(World& aWorld, entt::dispatcher& aDispatcher,
     m_ownershipTransferConnection = m_dispatcher.sink<NotifyOwnershipTransfer>().connect<&CharacterService::OnOwnershipTransfer>(this);
     m_removeCharacterConnection = m_dispatcher.sink<NotifyRemoveCharacter>().connect<&CharacterService::OnRemoveCharacter>(this);
     m_remoteSpawnDataReceivedConnection = m_dispatcher.sink<NotifySpawnData>().connect<&CharacterService::OnRemoteSpawnDataReceived>(this);
+
+    m_projectileLaunchedConnection = m_dispatcher.sink<ProjectileLaunchedEvent>().connect<&CharacterService::OnProjectileLaunchedEvent>(this);
+    m_projectileLaunchConnection = m_dispatcher.sink<NotifyProjectileLaunch>().connect<&CharacterService::OnNotifyProjectileLaunch>(this);
 
     m_mountConnection = m_dispatcher.sink<MountEvent>().connect<&CharacterService::OnMountEvent>(this);
     m_notifyMountConnection = m_dispatcher.sink<NotifyMount>().connect<&CharacterService::OnNotifyMount>(this);
@@ -490,6 +505,12 @@ void CharacterService::OnCharacterSpawn(const CharacterSpawnRequest& acMessage) 
         pActor->SetIgnoreFriendlyHit(true);
         pActor->SetPlayerRespawnMode();
         m_world.emplace_or_replace<PlayerComponent>(*entity, acMessage.PlayerId);
+
+        MapMarkerData* pMarkerData = MapMarkerData::New();
+        pMarkerData->name.value.Set(pActor->baseForm->GetName());
+        pMarkerData->flags = MapMarkerData::Flag::VISIBLE;
+        pMarkerData->type = MapMarkerData::Type::kGiantCamp;
+        pActor->extraData.SetMarkerData(pMarkerData);
     }
 
     if (pActor->IsDead() != acMessage.IsDead)
@@ -1477,6 +1498,12 @@ Actor* CharacterService::CreateCharacterForEntity(entt::entity aEntity) const no
         pActor->SetIgnoreFriendlyHit(true);
         pActor->SetPlayerRespawnMode();
         m_world.emplace_or_replace<PlayerComponent>(aEntity, acMessage.PlayerId);
+
+        MapMarkerData* pMarkerData = MapMarkerData::New();
+        pMarkerData->name.value.Set(pActor->baseForm->GetName());
+        pMarkerData->flags = MapMarkerData::Flag::VISIBLE;
+        pMarkerData->type = MapMarkerData::Type::kGiantCamp;
+        pActor->extraData.SetMarkerData(pMarkerData);
     }
 
     if (pActor->IsDead() != acMessage.IsDead)
