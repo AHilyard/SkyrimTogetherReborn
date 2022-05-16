@@ -5,11 +5,11 @@
 #include <Havok/BShkbHkxDB.h>
 #include <Havok/hkbBehaviorGraph.h>
 
-#include <Services/ImguiService.h>
 #include <Services/DebugService.h>
-#include <Services/TransportService.h>
+#include <Services/ImguiService.h>
 #include <Services/PapyrusService.h>
 #include <Services/QuestService.h>
+#include <Services/TransportService.h>
 
 #include <Events/UpdateEvent.h>
 #include <Events/DialogueEvent.h>
@@ -43,6 +43,9 @@
 
 #include <Messages/RequestRespawn.h>
 
+#include <Interface/IMenu.h>
+#include <Interface/UI.h>
+
 #include <Games/Misc/SubtitleManager.h>
 #include <Games/Overrides.h>
 #include <OverlayApp.hpp>
@@ -52,13 +55,18 @@
 #include <EquipManager.h>
 #include <Forms/TESAmmo.h>
 #include <BSGraphics/BSGraphicsRenderer.h>
-#include <Interface/UI.h>
 
 // TODO: ft
 #if TP_SKYRIM64
+#include <Games/Skyrim/BSGraphics/BSGraphicsRenderer.h>
+#include <Games/Skyrim/DefaultObjectManager.h>
+#include <Games/Skyrim/Forms/TESAmmo.h>
+#include <Games/Skyrim/Interface/UI.h>
+#include <Games/Skyrim/Misc/InventoryEntry.h>
+#include <Games/Skyrim/Misc/MiddleProcess.h>
 #include <Camera/PlayerCamera.h>
 #include <AI/Movement/PlayerControls.h>
-#include <Interface/IMenu.h>
+#include <Games/Skyrim/Interface/IMenu.h>
 #include <Camera/PlayerCamera.h>
 #include <DefaultObjectManager.h>
 #include <Misc/InventoryEntry.h>
@@ -69,14 +77,18 @@
 #include <inttypes.h>
 extern thread_local bool g_overrideFormId;
 
+#include <Games/Skyrim/Interface/Debug/DebugText.h>
+
 constexpr char kBuildTag[] = "Build: " BUILD_COMMIT " " BUILD_BRANCH " EVO\nBuilt: " __TIMESTAMP__;
 static void DrawBuildTag()
 {
+#ifndef TP_FALLOUT
     auto* pWindow = BSGraphics::GetMainWindow();
     const ImVec2 coord{50.f, static_cast<float>((pWindow->uiWindowHeight + 25) - 100)};
     ImGui::GetBackgroundDrawList()->AddText(ImGui::GetFont(), ImGui::GetFontSize(), coord,
                                             ImColor::ImColor(255.f, 0.f, 0.f),
                                             kBuildTag);
+#endif
 }
 
 void __declspec(noinline) DebugService::PlaceActorInWorld() noexcept
@@ -94,7 +106,7 @@ void __declspec(noinline) DebugService::PlaceActorInWorld() noexcept
 }
 
 DebugService::DebugService(entt::dispatcher& aDispatcher, World& aWorld, TransportService& aTransport,
-                         ImguiService& aImguiService)
+                           ImguiService& aImguiService)
     : m_dispatcher(aDispatcher), m_transport(aTransport), m_world(aWorld)
 {
     m_updateConnection = m_dispatcher.sink<UpdateEvent>().connect<&DebugService::OnUpdate>(this);
