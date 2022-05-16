@@ -58,8 +58,9 @@ void RunTiltedInit(const std::filesystem::path& acGamePath, const String& aExeVe
         ShowAddressLibraryError(acGamePath.c_str());
     }
 
-    //VersionDb::Get().DumpToTextFile(R"(S:\Work\Tilted\fallout\_addresslib.txt)");
-
+    // VersionDb::Get().CreateMapping(R"(S:\Work\Tilted\Reverse\rename.txt)",
+    //                                R"(S:\Work\Tilted\Reverse\mapping.idc)");
+    // VersionDb::Get().DumpToTextFile(R"(S:\Work\Tilted\fallout\_addresslib.txt)");
     g_appInstance = std::make_unique<TiltedOnlineApp>();
 
     TiltedOnlineApp::InstallHooks2();
