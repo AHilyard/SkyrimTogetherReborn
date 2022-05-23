@@ -77,7 +77,7 @@
 #include <inttypes.h>
 extern thread_local bool g_overrideFormId;
 
-#include <Games/Skyrim/Interface/Debug/DebugText.h>
+#include <Debug/DebugText.h>
 
 constexpr char kBuildTag[] = "Build: " BUILD_COMMIT " " BUILD_BRANCH " EVO\nBuilt: " __TIMESTAMP__;
 static void DrawBuildTag()
@@ -302,24 +302,7 @@ void DebugService::OnDraw() noexcept
     }
     if (ImGui::BeginMenu("UI"))
     {
-        ImGui::MenuItem("Show build tag", nullptr, &m_showBuildTag);
-        if (ImGui::Button("Log all open windows"))
-        {
-            UI* pUI = UI::Get();
-            for (const auto& it : pUI->menuMap)
-            {
-                if (pUI->GetMenuOpen(it.key))
-                    spdlog::info("{}", it.key.AsAscii());
-            }
-        }
-
-#if TP_SKYRIM64
-        if (ImGui::Button("Close all menus"))
-        {
-            UI::Get()->CloseAllMenus();
-        }
-#endif
-
+        DrawUIView();
         ImGui::EndMenu();
     }
 #endif
