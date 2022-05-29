@@ -13,6 +13,7 @@ struct PlayerDialogueEvent;
 struct PlayerLevelEvent;
 struct PartyJoinedEvent;
 struct PartyLeftEvent;
+struct PlayerMapMarkerUpdateEvent;
 
 struct NotifyPlayerRespawn;
 
@@ -39,6 +40,7 @@ protected:
     void OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const noexcept;
     void OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept;
     void OnPartyLeftEvent(const PartyLeftEvent& acEvent) noexcept;
+    void OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept;
 
 private:
 
@@ -86,4 +88,5 @@ private:
     entt::scoped_connection m_playerLevelConnection;
     entt::scoped_connection m_partyJoinedConnection;
     entt::scoped_connection m_partyLeftConnection;
+    entt::scoped_connection m_playerMapMarkerConnection;
 };
