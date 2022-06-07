@@ -64,6 +64,7 @@ private:
     double m_respawnTimer = 0.0;
     int32_t m_serverDifficulty = 6;
     int32_t m_previousDifficulty = 6;
+    Vector<int32_t> m_ownedMaphandles;
 
     bool m_isDeathSystemEnabled = true;
 

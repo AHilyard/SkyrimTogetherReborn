@@ -49,6 +49,12 @@ PlayerService::PlayerService(World& aWorld, entt::dispatcher& aDispatcher, Trans
         m_dispatcher.sink<PlayerMapMarkerUpdateEvent>().connect<&PlayerService::OnPlayerMapMarkerUpdateEvent>(this);
 }
 
+static bool knockdownStart = false;
+static double knockdownTimer = 0.0;
+
+static bool godmodeStart = false;
+static double godmodeTimer = 0.0;
+
 void PlayerService::OnUpdate(const UpdateEvent& acEvent) noexcept
 {
     RunRespawnUpdates(acEvent.Delta);
@@ -184,7 +190,15 @@ void PlayerService::OnPlayerDialogueEvent(const PlayerDialogueEvent& acEvent) co
 void PlayerService::OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept
 {
     // for only players that are in the same worldspace as we are...
-    //for (auto &it : )
+    for (int32_t handle : m_ownedMaphandles)
+    {
+        #if 0
+        // fetch smart pointer from handle function
+        // then fetch all players,
+        if worldspace = remoteworldspace
+
+            #endif
+    }
 }
 
 void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const noexcept
