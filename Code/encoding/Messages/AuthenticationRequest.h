@@ -4,6 +4,7 @@
 #include <Structs/Mods.h>
 #include <TiltedCore/Buffer.hpp>
 #include <Structs/GameId.h>
+#include <Structs/GridCellCoords.h>
 
 struct AuthenticationRequest final : ClientMessage
 {
@@ -30,17 +31,19 @@ struct AuthenticationRequest final : ClientMessage
             Username == achRhs.Username &&
             WorldSpaceId == achRhs.WorldSpaceId &&
             CellId == achRhs.CellId &&
-            Level == achRhs.Level;
+            Level == achRhs.Level &&
+            CenterCoords == achRhs.CenterCoords;
     }
 
-    uint64_t DiscordId{};
-    bool SKSEActive{};
-    bool MO2Active{};
-    String Token{};
-    String Version{};
-    Mods UserMods{};
-    String Username{};
-    GameId WorldSpaceId{};
-    GameId CellId{};
-    uint16_t Level{};
+    uint64_t DiscordId;
+    bool SKSEActive;
+    bool MO2Active; 
+    String Token;
+    String Version;
+    Mods UserMods;
+    String Username;
+    GameId WorldSpaceId;
+    GameId CellId;
+    uint16_t Level;
+    GridCellCoords CenterCoords;
 };

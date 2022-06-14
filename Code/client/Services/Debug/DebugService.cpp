@@ -222,9 +222,43 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
         {
             s_f8Pressed = true;
 
-            //m_world.GetOverlayService().Reload();
-            auto* pPlayer = PlayerCharacter::Get();
-            spdlog::info("{}", pPlayer->formID);
+            PlayerCharacter* pPlayer = PlayerCharacter::Get();
+            for (uint32_t handle : pPlayer->CurrentMapmarkerRefHandles)
+            {
+                TESObjectREFR* pRefr = TESObjectREFR::GetByHandle(handle);
+                spdlog::critical("Base id: {:X}", pRefr->baseForm->formID);
+            }
+
+            Actor* pActor = Cast<Actor>(TESForm::GetById(0x1a677));
+            pActor->MoveTo(PlayerCharacter::Get()->parentCell, PlayerCharacter::Get()->position);
+
+        #if 0
+            static bool s_enabled = true;
+
+            FadeOutGame(s_enabled, true, 1.f, true, 0.f);
+
+            s_enabled = !s_enabled;
+
+            static bool s_enabled = true;
+            static bool s_firstPerson = false;
+
+            auto* pCamera = PlayerCamera::Get();
+            auto* pPlayerControls = PlayerControls::GetInstance();
+
+            if (s_enabled)
+            {
+                s_firstPerson = pCamera->IsFirstPerson();
+                pCamera->ForceFirstPerson();
+            }
+            else
+            {
+                s_firstPerson ? pCamera->ForceFirstPerson() : pCamera->ForceThirdPerson();
+            }
+
+            pPlayerControls->SetCamSwitch(s_enabled);
+
+            s_enabled = !s_enabled;
+        #endif
         }
     }
     else
