@@ -18,6 +18,8 @@
 #include <Messages/ShiftGridCellRequest.h>
 #include <Messages/EnterExteriorCellRequest.h>
 #include <Messages/EnterInteriorCellRequest.h>
+#include <Messages/NotifyPlayerLeft.h>
+#include <Messages/NotifyPlayerJoined.h>
 #include <Messages/PlayerDialogueRequest.h>
 #include <Messages/PlayerLevelRequest.h>
 #include <Messages/NotifyPlayerPosition.h>
@@ -129,6 +131,14 @@ void PlayerService::OnServerSettingsReceived(const ServerSettings& acSettings) n
     ToggleDeathSystem(acSettings.DeathSystemEnabled);
 }
 
+void PlayerService::OnPlayerJoined(const NotifyPlayerJoined& acMessage) noexcept
+{
+}
+
+void PlayerService::OnPlayerLeft(const NotifyPlayerLeft& acMessage) noexcept
+{
+}
+
 void PlayerService::OnNotifyPlayerRespawn(const NotifyPlayerRespawn& acMessage) const noexcept
 {
     PlayerCharacter::Get()->PayGold(acMessage.GoldLost);
@@ -188,6 +198,22 @@ void PlayerService::OnPlayerDialogueEvent(const PlayerDialogueEvent& acEvent) co
 
     m_transport.Send(request);
 }
+
+void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const noexcept
+{
+    if (!m_transport.IsConnected())
+        return;
+
+    PlayerLevelRequest request{};
+    request.NewLevel = PlayerCharacter::Get()->GetLevel();
+
+    m_transport.Send(request);
+}
+
+void PlayerService::OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept
+{
+}
+
 
 // on join/leave, add to our array...
 void PlayerService::OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept

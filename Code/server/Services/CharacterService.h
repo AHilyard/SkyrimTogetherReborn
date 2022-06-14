@@ -62,6 +62,7 @@ protected:
 
     void ProcessFactionsChanges() const noexcept;
     void ProcessMovementChanges() const noexcept;
+    void ProcessPlayerPositionChanges() const noexcept;
 
 private:
 

@@ -14,7 +14,6 @@ struct PlayerMapMarkerUpdateEvent;
 struct PlayerLevelEvent;
 struct PartyJoinedEvent;
 struct PartyLeftEvent;
-struct PlayerMapMarkerUpdateEvent;
 
 struct NotifyPlayerRespawn;
 struct NotifyPlayerPosition;
@@ -37,6 +36,8 @@ protected:
     void OnConnected(const ConnectedEvent& acEvent) noexcept;
     void OnDisconnected(const DisconnectedEvent& acEvent) noexcept;
     void OnServerSettingsReceived(const ServerSettings& acSettings) noexcept;
+    void OnPlayerJoined(const NotifyPlayerJoined& acMessage) noexcept;
+    void OnPlayerLeft(const NotifyPlayerLeft& acMessage) noexcept;
     void OnNotifyPlayerRespawn(const NotifyPlayerRespawn& acMessage) const noexcept;
     void OnGridCellChangeEvent(const GridCellChangeEvent& acEvent) const noexcept;
     void OnCellChangeEvent(const CellChangeEvent& acEvent) const noexcept;
