@@ -19,6 +19,8 @@ struct NotifyPlayerRespawn;
 struct NotifyPlayerPosition;
 struct NotifyPlayerJoined;
 struct NotifyPlayerLeft;
+struct NotifyPlayerCellChanged;
+struct GridCellCoords;
 
 /**
 * @brief Handles logic related to the local player.
@@ -46,9 +48,12 @@ protected:
     void OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept;
     void OnPartyLeftEvent(const PartyLeftEvent& acEvent) noexcept;
     void OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept;
+    void OnNotifyPlayerCellChanged(const NotifyPlayerCellChanged& acMessage) const noexcept;
     void OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept;
 
 private:
+
+    TESObjectCELL* GetCell(const GameId& acCellId, const GameId& acWorldSpaceId, const GridCellCoords& acCenterCoords) const noexcept;
 
     /**
     * @brief Run the respawn timer, and if it hits 0, respawn the player.
@@ -73,7 +78,7 @@ private:
 
     struct MapInfo
     {
-        ~MapInfo();
+        void Delete() const noexcept;
 
         // TODO: these raw ptrs are a bad idea
         TESObjectREFR* pPlayer;
@@ -109,4 +114,6 @@ private:
     entt::scoped_connection m_partyLeftConnection;
     entt::scoped_connection m_playerPosition;
     entt::scoped_connection m_playerMapMarkerConnection;
+    entt::scoped_connection m_playerPositionConnection;
+    entt::scoped_connection m_playerCellChangeConnection;
 };

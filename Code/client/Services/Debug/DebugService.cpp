@@ -48,6 +48,8 @@
 
 #include <Games/Misc/SubtitleManager.h>
 #include <Games/Overrides.h>
+#include <Camera/PlayerCamera.h>
+#include <ExtraData/ExtraMapMarker.h>
 #include <OverlayApp.hpp>
 
 #include <BranchInfo.h>
@@ -226,7 +228,12 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
             for (uint32_t handle : pPlayer->CurrentMapmarkerRefHandles)
             {
                 TESObjectREFR* pRefr = TESObjectREFR::GetByHandle(handle);
-                spdlog::critical("Base id: {:X}", pRefr->baseForm->formID);
+                ExtraMapMarker* pData = Cast<ExtraMapMarker>(pRefr->extraData.GetByType(ExtraData::MapMarker));
+                if (!pData || !pData->pMarkerData)
+                    continue;
+
+                const char* pEditorId = pData->pMarkerData->name.value.AsAscii();
+                spdlog::critical("Form id: {:X}, name: {}", pRefr->formID, pEditorId ? pEditorId : "NONE");
             }
 
             Actor* pActor = Cast<Actor>(TESForm::GetById(0x1a677));
