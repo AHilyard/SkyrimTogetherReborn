@@ -214,6 +214,24 @@ void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const no
     m_transport.Send(request);
 }
 
+void PlayerService::OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept
+{
+}
+
+// on join/leave, add to our array...
+void PlayerService::OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept
+{
+    // for only players that are in the same worldspace as we are...
+    for (int32_t handle : m_ownedMaphandles)
+    {
+        #if 0
+        // fetch smart pointer from handle function
+        // then fetch all players,
+        if worldspace = remoteworldspace
+
+            #endif
+    }
+}
 void PlayerService::OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept
 {
     // TODO: this can be done a bit prettier
