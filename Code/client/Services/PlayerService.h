@@ -16,6 +16,7 @@ struct PartyLeftEvent;
 struct PlayerMapMarkerUpdateEvent;
 
 struct NotifyPlayerRespawn;
+struct NotifyPlayerPosition;
 
 /**
 * @brief Handles logic related to the local player.
@@ -40,6 +41,7 @@ protected:
     void OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const noexcept;
     void OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept;
     void OnPartyLeftEvent(const PartyLeftEvent& acEvent) noexcept;
+    void OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept;
     void OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept;
 
 private:
@@ -89,5 +91,6 @@ private:
     entt::scoped_connection m_playerLevelConnection;
     entt::scoped_connection m_partyJoinedConnection;
     entt::scoped_connection m_partyLeftConnection;
+    entt::scoped_connection m_playerPosition;
     entt::scoped_connection m_playerMapMarkerConnection;
 };

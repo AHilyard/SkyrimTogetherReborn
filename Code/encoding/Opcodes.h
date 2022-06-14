@@ -108,5 +108,6 @@ enum ServerOpcode : unsigned char
     kNotifyPlayerHealthUpdate,
     kNotifySettingsChange,
     kNotifyWeatherChange,
+    kNotifyPlayerPosition,
     kServerOpcodeMax
 };

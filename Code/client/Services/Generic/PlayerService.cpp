@@ -20,6 +20,7 @@
 #include <Messages/EnterInteriorCellRequest.h>
 #include <Messages/PlayerDialogueRequest.h>
 #include <Messages/PlayerLevelRequest.h>
+#include <Messages/NotifyPlayerPosition.h>
 
 #include <Structs/ServerSettings.h>
 
@@ -45,6 +46,7 @@ PlayerService::PlayerService(World& aWorld, entt::dispatcher& aDispatcher, Trans
     m_playerLevelConnection = m_dispatcher.sink<PlayerLevelEvent>().connect<&PlayerService::OnPlayerLevelEvent>(this);
     m_partyJoinedConnection = aDispatcher.sink<PartyJoinedEvent>().connect<&PlayerService::OnPartyJoinedEvent>(this);
     m_partyLeftConnection = aDispatcher.sink<PartyLeftEvent>().connect<&PlayerService::OnPartyLeftEvent>(this);
+    m_playerPosition = m_dispatcher.sink<NotifyPlayerPosition>().connect<&PlayerService::OnNotifyPlayerPosition>(this);
     m_playerMapMarkerConnection =
         m_dispatcher.sink<PlayerMapMarkerUpdateEvent>().connect<&PlayerService::OnPlayerMapMarkerUpdateEvent>(this);
 }
