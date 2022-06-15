@@ -547,6 +547,13 @@ void TESObjectREFR::UpdateItemList(TESForm* pUnkForm) noexcept
     TiltedPhoques::ThisCall(updateItemList, this, pUnkForm);
 }
 
+bool TESObjectREFR::IsInInteriorCell() noexcept
+{
+    TP_THIS_FUNCTION(TIsInInteriorCell, bool, TESObjectREFR);
+    POINTER_SKYRIMSE(TIsInInteriorCell, isInInteriorCell, 19815);
+    return ThisCall(isInInteriorCell, this);
+}
+
 void TESObjectREFR::Activate(TESObjectREFR* apActivator, uint8_t aUnk1, TESBoundObject* aObjectToGet, int32_t aCount, char aDefaultProcessing) noexcept
 {
     ScopedActivateOverride _;
