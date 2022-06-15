@@ -249,9 +249,6 @@ void PlayerService::ProcessPlayerPositionChanges() const noexcept
         message.PlayerId = pPlayer->GetId();
 
         message.Position = movementComponent->Position;
-
-        message.Rotation.x = movementComponent->Rotation.x;
-        message.Rotation.y = movementComponent->Rotation.z;
     }
 
     for (auto& message : messages)
