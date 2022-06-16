@@ -31,6 +31,8 @@
 
 #include <Structs/ServerSettings.h>
 
+#include <Interface/Menus/MapMenu.h>
+#include <Interface/UI.h>
 #include <PlayerCharacter.h>
 #include <Forms/TESObjectCELL.h>
 #include <Forms/TESGlobal.h>
@@ -395,6 +397,7 @@ void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const no
 
 void PlayerService::OnPlayerSetWaypoint(const PlayerSetWaypointEvent& acMessage) const noexcept
 {
+
     if (!m_transport.IsConnected())
         return;
 
@@ -437,6 +440,10 @@ void PlayerService::OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept
 
 void PlayerService::OnPartyLeftEvent(const PartyLeftEvent& acEvent) noexcept
 {
+    m_waypointData->cOriginalFlags = m_waypointData->cFlags = MapMarkerData::Flag::VISIBLE;
+    m_waypoint->position.x = acMessage.Position.x;
+    m_waypoint->position.y = acMessage.Position.y;
+
     // TODO: this can be done a bit prettier
 #if TP_SKYRIM64
     if (World::Get().GetTransport().IsConnected())
