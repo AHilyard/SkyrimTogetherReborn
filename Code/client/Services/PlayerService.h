@@ -12,9 +12,11 @@ struct CellChangeEvent;
 struct PlayerDialogueEvent;
 struct PlayerMapMarkerUpdateEvent;
 struct PlayerLevelEvent;
+struct PlayerMapMarkerUpdateEvent;
+struct PlayerSetWaypointEvent;
+struct NotifySetWaypoint;
 struct PartyJoinedEvent;
 struct PartyLeftEvent;
-
 struct NotifyPlayerRespawn;
 struct NotifyPlayerPosition;
 struct NotifyPlayerJoined;
@@ -41,6 +43,7 @@ protected:
     void OnPlayerJoined(const NotifyPlayerJoined& acMessage) noexcept;
     void OnPlayerLeft(const NotifyPlayerLeft& acMessage) noexcept;
     void OnNotifyPlayerRespawn(const NotifyPlayerRespawn& acMessage) const noexcept;
+    void OnNotifyPlayerSetWaypoint(const NotifySetWaypoint& acMessage) const noexcept;
     void OnGridCellChangeEvent(const GridCellChangeEvent& acEvent) const noexcept;
     void OnCellChangeEvent(const CellChangeEvent& acEvent) const noexcept;
     void OnPlayerDialogueEvent(const PlayerDialogueEvent& acEvent) const noexcept;
@@ -50,6 +53,7 @@ protected:
     void OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept;
     void OnNotifyPlayerCellChanged(const NotifyPlayerCellChanged& acMessage) const noexcept;
     void OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept;
+    void OnPlayerSetWaypoint(const PlayerSetWaypointEvent& acMessage) const noexcept;
 
 private:
 
@@ -71,6 +75,9 @@ private:
     World& m_world;
     entt::dispatcher& m_dispatcher;
     TransportService& m_transport;
+
+    TESObjectREFR* m_waypoint; 
+    MapMarkerData* m_waypointData; 
 
     double m_respawnTimer = 0.0;
     int32_t m_serverDifficulty = 6;
@@ -107,4 +114,6 @@ private:
     entt::scoped_connection m_playerMapMarkerConnection;
     entt::scoped_connection m_playerPositionConnection;
     entt::scoped_connection m_playerCellChangeConnection;
+    entt::scoped_connection m_playerSetWaypointConnection;
+    entt::scoped_connection m_playerNotifySetWaypointConnection;
 };

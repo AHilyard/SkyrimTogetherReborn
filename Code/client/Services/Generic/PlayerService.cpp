@@ -8,7 +8,9 @@
 #include <Events/GridCellChangeEvent.h>
 #include <Events/CellChangeEvent.h>
 #include <Events/PlayerDialogueEvent.h>
+#include <Events/PlayerMapMarkerUpdateEvent.h>
 #include <Events/PlayerLevelEvent.h>
+#include <Events/PlayerSetWaypointEvent.h>
 #include <Events/PartyJoinedEvent.h>
 #include <Events/PartyLeftEvent.h>
 #include <Events/PlayerMapMarkerUpdateEvent.h>
@@ -18,12 +20,14 @@
 #include <Messages/ShiftGridCellRequest.h>
 #include <Messages/EnterExteriorCellRequest.h>
 #include <Messages/EnterInteriorCellRequest.h>
+#include <Messages/RequestSetWaypoint.h>
 #include <Messages/NotifyPlayerLeft.h>
 #include <Messages/NotifyPlayerJoined.h>
 #include <Messages/PlayerDialogueRequest.h>
 #include <Messages/PlayerLevelRequest.h>
 #include <Messages/NotifyPlayerPosition.h>
 #include <Messages/NotifyPlayerCellChanged.h>
+#include <Messages/NotifySetWaypoint.h>
 
 #include <Structs/ServerSettings.h>
 
@@ -43,8 +47,9 @@ PlayerService::PlayerService(World& aWorld, entt::dispatcher& aDispatcher, Trans
     m_connectedConnection = m_dispatcher.sink<ConnectedEvent>().connect<&PlayerService::OnConnected>(this);
     m_disconnectedConnection = m_dispatcher.sink<DisconnectedEvent>().connect<&PlayerService::OnDisconnected>(this);
     m_settingsConnection = m_dispatcher.sink<ServerSettings>().connect<&PlayerService::OnServerSettingsReceived>(this);
-    m_playerJoinedConnection = aDispatcher.sink<NotifyPlayerJoined>().connect<&PlayerService::OnPlayerJoined>(this);
-    m_playerLeftConnection = aDispatcher.sink<NotifyPlayerLeft>().connect<&PlayerService::OnPlayerLeft>(this);
+    m_playerJoinedConnection = m_dispatcher.sink<NotifyPlayerJoined>().connect<&PlayerService::OnPlayerJoined>(this);
+    m_playerLeftConnection = m_dispatcher.sink<NotifyPlayerLeft>().connect<&PlayerService::OnPlayerLeft>(this);
+    m_playerNotifySetWaypointConnection = m_dispatcher.sink<NotifySetWaypoint>().connect<&PlayerService::OnNotifyPlayerSetWaypoint>(this);
     m_notifyRespawnConnection = m_dispatcher.sink<NotifyPlayerRespawn>().connect<&PlayerService::OnNotifyPlayerRespawn>(this);
     m_gridCellChangeConnection = m_dispatcher.sink<GridCellChangeEvent>().connect<&PlayerService::OnGridCellChangeEvent>(this);
     m_cellChangeConnection = m_dispatcher.sink<CellChangeEvent>().connect<&PlayerService::OnCellChangeEvent>(this);
@@ -56,7 +61,9 @@ PlayerService::PlayerService(World& aWorld, entt::dispatcher& aDispatcher, Trans
     m_playerPosition = m_dispatcher.sink<NotifyPlayerPosition>().connect<&PlayerService::OnNotifyPlayerPosition>(this);
     m_playerPositionConnection = m_dispatcher.sink<NotifyPlayerPosition>().connect<&PlayerService::OnNotifyPlayerPosition>(this);
     m_playerCellChangeConnection = m_dispatcher.sink<NotifyPlayerCellChanged>().connect<&PlayerService::OnNotifyPlayerCellChanged>(this);
+    m_playerSetWaypointConnection = m_dispatcher.sink<PlayerSetWaypointEvent>().connect<&PlayerService::OnPlayerSetWaypoint>(this);
 }
+
 
 // TODO: this whole thing should probably be a util function by now
 TESObjectCELL* PlayerService::GetCell(const GameId& acCellId, const GameId& acWorldSpaceId, const GridCellCoords& acCenterCoords) const noexcept
@@ -105,6 +112,22 @@ void PlayerService::OnUpdate(const UpdateEvent& acEvent) noexcept
 
 void PlayerService::OnConnected(const ConnectedEvent& acEvent) noexcept
 {
+    m_waypoint = TESObjectREFR::New();
+    //Create Global Waypoint
+    m_waypoint->SetBaseForm(TESForm::GetById(0x10));
+    m_waypoint->SetSkipSaveFlag(true);
+
+    m_waypointData = MapMarkerData::New();
+
+    m_waypointData->name.value.Set("Custom Location");
+    m_waypointData->cOriginalFlags = m_waypointData->cFlags = MapMarkerData::Flag::NONE;
+    m_waypointData->sType = MapMarkerData::Type::kCustomMarker; // "custom destination" marker either 66 or 0
+    m_waypoint->extraData.SetMarkerData(m_waypointData);
+
+    uint32_t handle;
+    m_waypoint->GetHandle(handle);
+    PlayerCharacter::Get()->AddMapmarkerRef(handle);
+
     // TODO: SkyrimTogether.esm
     TESGlobal* pKillMove = Cast<TESGlobal>(TESForm::GetById(0x100F19));
     pKillMove->f = 0.f;
@@ -367,6 +390,16 @@ void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const no
     PlayerLevelRequest request{};
     request.NewLevel = PlayerCharacter::Get()->GetLevel();
 
+    m_transport.Send(request);
+}
+
+void PlayerService::OnPlayerSetWaypoint(const PlayerSetWaypointEvent& acMessage) const noexcept
+{
+    if (!m_transport.IsConnected())
+        return;
+
+    RequestSetWaypoint request = {};
+    request.Position = acMessage.Position;
     m_transport.Send(request);
 }
 
