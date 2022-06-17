@@ -397,17 +397,18 @@ void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const no
 
 void PlayerService::OnPlayerSetWaypoint(const PlayerSetWaypointEvent& acMessage) const noexcept
 {
-
-    if (!m_transport.IsConnected())
-        return;
-
-    RequestSetWaypoint request = {};
-    request.Position = acMessage.Position;
-    m_transport.Send(request);
+    NiPoint3 Position = {};
+    Position.x = acMessage.Position.x;
+    Position.y = acMessage.Position.y;
+    auto* pPlayerWorldSpace = PlayerCharacter::Get()->GetWorldSpace();
+    SetWaypoint(PlayerCharacter::Get(), &Position, pPlayerWorldSpace);
 }
 
 void PlayerService::OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept
 {
+    MapMenu* pMapMenu = reinterpret_cast<decltype(pMapMenu)>(UI::Get()->FindMenuByName("MapMenu"));
+    spdlog::info(pMapMenu == nullptr);
+    SetWaypoint(pMapMenu, acMessage.Position.x, acMessage.Position.y);
 }
 
 // on join/leave, add to our array...
