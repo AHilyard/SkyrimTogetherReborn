@@ -22,17 +22,12 @@
 #include <Messages/ShiftGridCellRequest.h>
 #include <Messages/EnterExteriorCellRequest.h>
 #include <Messages/EnterInteriorCellRequest.h>
-#include <Messages/RequestSetWaypoint.h>
-#include <Messages/RequestDelWaypoint.h>
 #include <Messages/NotifyPlayerLeft.h>
 #include <Messages/NotifyPlayerJoined.h>
 #include <Messages/PlayerDialogueRequest.h>
 #include <Messages/PlayerLevelRequest.h>
 #include <Messages/NotifyPlayerPosition.h>
 #include <Messages/NotifyPlayerCellChanged.h>
-#include <Messages/NotifySetWaypoint.h>
-#include <Messages/NotifyDelWaypoint.h>
-
 
 #include <Structs/ServerSettings.h>
 
@@ -56,13 +51,10 @@ PlayerService::PlayerService(World& aWorld, entt::dispatcher& aDispatcher, Trans
     m_settingsConnection = m_dispatcher.sink<ServerSettings>().connect<&PlayerService::OnServerSettingsReceived>(this);
     m_playerJoinedConnection = m_dispatcher.sink<NotifyPlayerJoined>().connect<&PlayerService::OnPlayerJoined>(this);
     m_playerLeftConnection = m_dispatcher.sink<NotifyPlayerLeft>().connect<&PlayerService::OnPlayerLeft>(this);
-    m_playerNotifySetWaypointConnection = m_dispatcher.sink<NotifySetWaypoint>().connect<&PlayerService::OnNotifyPlayerSetWaypoint>(this);
-    m_playerNotifyDelWaypointConnection = m_dispatcher.sink<NotifyDelWaypoint>().connect<&PlayerService::OnNotifyPlayerDelWaypoint>(this);
     m_notifyRespawnConnection = m_dispatcher.sink<NotifyPlayerRespawn>().connect<&PlayerService::OnNotifyPlayerRespawn>(this);
     m_gridCellChangeConnection = m_dispatcher.sink<GridCellChangeEvent>().connect<&PlayerService::OnGridCellChangeEvent>(this);
     m_cellChangeConnection = m_dispatcher.sink<CellChangeEvent>().connect<&PlayerService::OnCellChangeEvent>(this);
     m_playerDialogueConnection = m_dispatcher.sink<PlayerDialogueEvent>().connect<&PlayerService::OnPlayerDialogueEvent>(this);
-    m_playerMapMarkerConnection = m_dispatcher.sink<PlayerMapMarkerUpdateEvent>().connect<&PlayerService::OnPlayerMapMarkerUpdateEvent>(this);
     m_playerLevelConnection = m_dispatcher.sink<PlayerLevelEvent>().connect<&PlayerService::OnPlayerLevelEvent>(this);
     m_partyJoinedConnection = aDispatcher.sink<PartyJoinedEvent>().connect<&PlayerService::OnPartyJoinedEvent>(this);
     m_partyLeftConnection = aDispatcher.sink<PartyLeftEvent>().connect<&PlayerService::OnPartyLeftEvent>(this);
@@ -93,8 +85,6 @@ TESObjectCELL* PlayerService::GetCell(const GameId& acCellId, const GameId& acWo
 
     return pCell;
 }
-
-
 
 static bool knockdownStart = false;
 static double knockdownTimer = 0.0;
@@ -209,53 +199,10 @@ void PlayerService::OnServerSettingsReceived(const ServerSettings& acSettings) n
 
 void PlayerService::OnPlayerJoined(const NotifyPlayerJoined& acMessage) noexcept
 {
-    //Associate a dummy marker with this player id
-    uint32_t handle = GetDummyMarker();
-
-    TESObjectREFR* pNewPlayer = TESObjectREFR::GetByHandle(handle);
-
-    pNewPlayer->SetBaseForm(TESForm::GetById(0x10));
-    pNewPlayer->SetSkipSaveFlag(true);
-
-    TESObjectCELL* pCell = GetCell(acMessage.CellId, acMessage.WorldSpaceId, acMessage.CenterCoords);
-
-    TP_ASSERT(pCell, "Cell not found for joined player");
-
-    if (pCell)
-        pNewPlayer->SetParentCell(pCell);
-
-    // TODO: might have to be respawned when traveling between worldspaces?
-    // doesn't always work when going from solstheim to skyrim
-    MapMarkerData* pMarkerData = MapMarkerData::New();
-    pMarkerData->name.value.Set(acMessage.Username.data());
-    pMarkerData->cOriginalFlags = pMarkerData->cFlags = MapMarkerData::Flag::NONE;
-    pMarkerData->sType = MapMarkerData::Type::kMultipleQuest; // "custom destination" marker either 66 or 0
-    pNewPlayer->extraData.SetMarkerData(pMarkerData);
-
-    m_mapHandles[acMessage.PlayerId] = handle;
-
-    //Each time a player joins create a spare dummy marker on retainer
-    CreateDummyMarker();
 }
 
 void PlayerService::OnPlayerLeft(const NotifyPlayerLeft& acMessage) noexcept
-{
-    auto it = m_mapHandles.find(acMessage.PlayerId);
-
-    //Move marker off map
-    TESObjectREFR* pLeavePlayer = TESObjectREFR::GetByHandle(it->second);
-    pLeavePlayer->position.x = -INTMAX_MAX;
-    pLeavePlayer->position.y = -INTMAX_MAX;
-
-    if (it == m_mapHandles.end())
-    {
-        spdlog::error(__FUNCTION__ ": could not find player id {:X}", acMessage.PlayerId);
-        return;
-    }
-
-    DeleteDummyMarker(it->second);
-
-    m_mapHandles.erase(it);
+{ 
 }
 
 void PlayerService::OnNotifyPlayerRespawn(const NotifyPlayerRespawn& acMessage) const noexcept
@@ -316,94 +263,6 @@ void PlayerService::OnPlayerDialogueEvent(const PlayerDialogueEvent& acEvent) co
     request.Text = acEvent.Text;
 
     m_transport.Send(request);
-}
-
-void PlayerService::OnMapOpen(const MapOpenEvent& acMessage) noexcept
-{
-
-}
-
-void PlayerService::OnMapClose(const MapCloseEvent& acMessage) noexcept
-{
-    if (!m_transport.IsConnected() || m_waypointActive || m_waypoint->position.x == -INTMAX_MAX)
-        return;
-
-    SetWaypoint(PlayerCharacter::Get(), &m_waypoint->position, PlayerCharacter::Get()->GetWorldSpace());
-}
-
-
-void PlayerService::OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept
-{
-    auto it = m_mapHandles.find(acMessage.PlayerId);
-    if (it == m_mapHandles.end())
-    {
-        spdlog::error(__FUNCTION__ ": could not find player id {:X}", acMessage.PlayerId);
-        return;
-    }
-
-    auto* pDummyPlayer = TESObjectREFR::GetByHandle(it->second);
-    if (!pDummyPlayer)
-    {
-        spdlog::error(__FUNCTION__ ": could not find dummy player, handle: {:X}", it->second);
-        return;
-    }
-
-    ExtraMapMarker* pMapMarker = Cast<ExtraMapMarker>(pDummyPlayer->extraData.GetByType(ExtraData::MapMarker));
-    if (!pMapMarker || !pMapMarker->pMarkerData)
-    {
-        spdlog::error(__FUNCTION__ ": could not find map marker data, player id: {:X}", acMessage.PlayerId);
-        return;
-    }
-
-    MapMarkerData* pMarkerData = pMapMarker->pMarkerData;
-
-    // TODO: this is flawed due to cities being worldspaces on the same map
-    auto* pDummyWorldSpace = pDummyPlayer->GetWorldSpace();
-    auto* pPlayerWorldSpace = PlayerCharacter::Get()->GetWorldSpace();
-
-    if (pDummyPlayer->IsInInteriorCell() || (pPlayerWorldSpace && pDummyWorldSpace != pPlayerWorldSpace) ||
-        (pDummyWorldSpace && pDummyWorldSpace != pPlayerWorldSpace))
-    {
-        pMarkerData->cOriginalFlags = pMarkerData->cFlags = MapMarkerData::Flag::NONE;
-        return;
-    }
-
-    pMarkerData->cOriginalFlags = pMarkerData->cFlags =
-        MapMarkerData::Flag::VISIBLE | MapMarkerData::Flag::CAN_TRAVEL_TO;
-
-    pDummyPlayer->position = acMessage.Position;
-}
-
-void PlayerService::OnNotifyPlayerCellChanged(const NotifyPlayerCellChanged& acMessage) const noexcept
-{
-    auto it = m_mapHandles.find(acMessage.PlayerId);
-    if (it == m_mapHandles.end())
-    {
-        spdlog::error(__FUNCTION__ ": could not find player id {:X}", acMessage.PlayerId);
-        return;
-    }
-
-    TESObjectCELL* pCell = GetCell(acMessage.CellId, acMessage.WorldSpaceId, acMessage.CenterCoords);
-    if (!pCell)
-    {
-        spdlog::error(__FUNCTION__ ": could not find cell {:X}", acMessage.CellId.BaseId);
-        return;
-    }
-
-    auto* pDummyPlayer = TESObjectREFR::GetByHandle(it->second);
-    if (!pDummyPlayer)
-    {
-        spdlog::error(__FUNCTION__ ": could not find dummy player, handle: {:X}", it->second);
-        return;
-    }
-
-    pDummyPlayer->SetParentCell(pCell);
-}
-
-// on join/leave, add to our array...
-void PlayerService::OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept
-{
-
 }
 
 void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const noexcept

@@ -12,7 +12,6 @@ struct CellChangeEvent;
 struct MapOpenEvent;
 struct MapCloseEvent;
 struct PlayerDialogueEvent;
-struct PlayerMapMarkerUpdateEvent;
 struct PlayerLevelEvent;
 struct PlayerMapMarkerUpdateEvent;
 struct PlayerSetWaypointEvent;
@@ -47,8 +46,6 @@ protected:
     void OnPlayerJoined(const NotifyPlayerJoined& acMessage) noexcept;
     void OnPlayerLeft(const NotifyPlayerLeft& acMessage) noexcept;
     void OnNotifyPlayerRespawn(const NotifyPlayerRespawn& acMessage) const noexcept;
-    void OnNotifyPlayerSetWaypoint(const NotifySetWaypoint& acMessage) noexcept;
-    void OnNotifyPlayerDelWaypoint(const NotifyDelWaypoint& acMessage) noexcept;
     void OnGridCellChangeEvent(const GridCellChangeEvent& acEvent) const noexcept;
     void OnCellChangeEvent(const CellChangeEvent& acEvent) const noexcept;
     void OnPlayerDialogueEvent(const PlayerDialogueEvent& acEvent) const noexcept;
@@ -65,14 +62,6 @@ protected:
 
 private:
 
-    TESObjectCELL* GetCell(const GameId& acCellId, const GameId& acWorldSpaceId, const GridCellCoords& acCenterCoords) const noexcept;
-
-    struct MapHandleInfo
-    {
-        uint32_t PlayerId;
-        uint32_t handle;
-    };
-
     /**
     * @brief Run the respawn timer, and if it hits 0, respawn the player.
     */
@@ -83,25 +72,12 @@ private:
     */
     void RunDifficultyUpdates() const noexcept;
     void RunLevelUpdates() const noexcept;
-    void RunMapUpdates() noexcept;
 
     void ToggleDeathSystem(bool aSet) noexcept;
 
     World& m_world;
     entt::dispatcher& m_dispatcher;
     TransportService& m_transport;
-
-    void CreateDummyMarker() noexcept;
-    uint32_t GetDummyMarker() noexcept;
-    bool DeleteDummyMarker(const uint32_t acHandle) noexcept;
-
-    NiPoint3 m_waypointPos;
-    TESObjectREFR* m_waypoint; 
-    MapMarkerData* m_waypointData;
-    bool m_inMap;
-    bool m_waypointActive;
-    int m_invalidHandle = -1;
-    int m_initDummyMarkers = 10;
 
     double m_respawnTimer = 0.0;
     int32_t m_serverDifficulty = 6;
