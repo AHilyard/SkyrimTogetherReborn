@@ -522,13 +522,13 @@ void CharacterService::OnCharacterSpawn(const CharacterSpawnRequest& acMessage) 
     {
         pActor->SetIgnoreFriendlyHit(true);
         pActor->SetPlayerRespawnMode();
-        m_world.emplace_or_replace<PlayerComponent>(*entity, acMessage.PlayerId);
 
         MapMarkerData* pMarkerData = MapMarkerData::New();
         pMarkerData->name.value.Set(pActor->baseForm->GetName());
         pMarkerData->cOriginalFlags = pMarkerData->cFlags = MapMarkerData::Flag::VISIBLE;
         pMarkerData->sType = MapMarkerData::Type::kGiantCamp;
         pActor->extraData.SetMarkerData(pMarkerData);
+        m_world.emplace_or_replace<PlayerComponent>(*entity, acMessage.PlayerId);
     }
 
     if (pActor->IsDead() != acMessage.IsDead)
