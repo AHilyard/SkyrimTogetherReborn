@@ -46,11 +46,8 @@ PlayerService::PlayerService(World& aWorld, entt::dispatcher& aDispatcher, Trans
     : m_world(aWorld), m_dispatcher(aDispatcher), m_transport(aTransport)
 {
     m_updateConnection = m_dispatcher.sink<UpdateEvent>().connect<&PlayerService::OnUpdate>(this);
-    m_connectedConnection = m_dispatcher.sink<ConnectedEvent>().connect<&PlayerService::OnConnected>(this);
     m_disconnectedConnection = m_dispatcher.sink<DisconnectedEvent>().connect<&PlayerService::OnDisconnected>(this);
     m_settingsConnection = m_dispatcher.sink<ServerSettings>().connect<&PlayerService::OnServerSettingsReceived>(this);
-    m_playerJoinedConnection = m_dispatcher.sink<NotifyPlayerJoined>().connect<&PlayerService::OnPlayerJoined>(this);
-    m_playerLeftConnection = m_dispatcher.sink<NotifyPlayerLeft>().connect<&PlayerService::OnPlayerLeft>(this);
     m_notifyRespawnConnection = m_dispatcher.sink<NotifyPlayerRespawn>().connect<&PlayerService::OnNotifyPlayerRespawn>(this);
     m_gridCellChangeConnection = m_dispatcher.sink<GridCellChangeEvent>().connect<&PlayerService::OnGridCellChangeEvent>(this);
     m_cellChangeConnection = m_dispatcher.sink<CellChangeEvent>().connect<&PlayerService::OnCellChangeEvent>(this);
@@ -100,8 +97,6 @@ void PlayerService::OnUpdate(const UpdateEvent& acEvent) noexcept
     RunLevelUpdates();
     RunMapUpdates();
 }
-
-
 
 void PlayerService::OnConnected(const ConnectedEvent& acEvent) noexcept
 {
@@ -195,14 +190,6 @@ void PlayerService::OnServerSettingsReceived(const ServerSettings& acSettings) n
     }
 
     ToggleDeathSystem(acSettings.DeathSystemEnabled);
-}
-
-void PlayerService::OnPlayerJoined(const NotifyPlayerJoined& acMessage) noexcept
-{
-}
-
-void PlayerService::OnPlayerLeft(const NotifyPlayerLeft& acMessage) noexcept
-{ 
 }
 
 void PlayerService::OnNotifyPlayerRespawn(const NotifyPlayerRespawn& acMessage) const noexcept
