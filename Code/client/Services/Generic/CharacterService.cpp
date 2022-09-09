@@ -45,6 +45,14 @@
 #include <Messages/AssignCharacterResponse.h>
 #include <Messages/CancelAssignmentRequest.h>
 #include <Messages/CharacterSpawnRequest.h>
+#include <Messages/RequestFactionsChanges.h>
+#include <Messages/NotifyFactionsChanges.h>
+#include <Messages/NotifyRemoveCharacter.h>
+#include <Messages/RequestSpawnData.h>
+#include <Messages/NotifySpawnData.h>
+#include <Messages/RequestOwnershipTransfer.h>
+#include <Messages/NotifyOwnershipTransfer.h>
+#include <Messages/RequestOwnershipClaim.h>
 #include <Messages/ClientReferencesMoveRequest.h>
 #include <Messages/DialogueRequest.h>
 #include <Messages/MountRequest.h>
@@ -76,6 +84,7 @@
 
 #include <Games/TES.h>
 #include <World.h>
+#include <Interface/HUD/MapMarker_ExtraData.h>
 
 #include <Forms/TESAmmo.h>
 #include <Forms/TESObjectWEAP.h>
