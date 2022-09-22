@@ -52,12 +52,6 @@ protected:
     void OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const noexcept;
     void OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept;
     void OnPartyLeftEvent(const PartyLeftEvent& acEvent) noexcept;
-    void OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept;
-    void OnNotifyPlayerCellChanged(const NotifyPlayerCellChanged& acMessage) const noexcept;
-    void OnPlayerSetWaypoint(const PlayerSetWaypointEvent& acMessage) noexcept;
-    void OnPlayerDelWaypoint(const PlayerDelWaypointEvent& acMessage) noexcept;
-    void OnMapOpen(const MapOpenEvent& acMessage) noexcept;
-    void OnMapClose(const MapCloseEvent& acMessage) noexcept;
 
 
 private:
@@ -111,14 +105,4 @@ private:
     entt::scoped_connection m_playerLevelConnection;
     entt::scoped_connection m_partyJoinedConnection;
     entt::scoped_connection m_partyLeftConnection;
-    entt::scoped_connection m_playerPosition;
-    entt::scoped_connection m_playerMapMarkerConnection;
-    entt::scoped_connection m_playerPositionConnection;
-    entt::scoped_connection m_playerCellChangeConnection;
-    entt::scoped_connection m_playerDelWaypointConnection;
-    entt::scoped_connection m_playerSetWaypointConnection;
-    entt::scoped_connection m_playerNotifySetWaypointConnection;
-    entt::scoped_connection m_playerNotifyDelWaypointConnection;
-    entt::scoped_connection m_mapOpenConnection;
-    entt::scoped_connection m_mapCloseConnection;
 };

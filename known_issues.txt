@@ -1,0 +1,12 @@
+skyrim together problems:
+
+naked npcs
+animations often not synced
+random items/npcs/mobs not synced
+can't find other party members easily
+can't pass time easily
+multiple potions consumed at once
+side quests and first step of story quests not synced
+home storage not synced (it gets wiped randomly)
+dropped items not synced
+You can still hit other players (and gain skill) when pvp is disabled even though no damage is dealt

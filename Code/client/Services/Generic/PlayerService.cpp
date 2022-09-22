@@ -10,13 +10,11 @@
 #include <Events/PlayerDialogueEvent.h>
 #include <Events/PlayerMapMarkerUpdateEvent.h>
 #include <Events/PlayerLevelEvent.h>
-#include <Events/PlayerSetWaypointEvent.h>
-#include <Events/PlayerDelWaypointEvent.h>
+#include <Events/SetWaypointEvent.h>
+#include <Events/DeleteWaypointEvent.h>
 #include <Events/PartyJoinedEvent.h>
 #include <Events/PartyLeftEvent.h>
 #include <Events/PlayerMapMarkerUpdateEvent.h>
-#include <Events/MapOpenEvent.h>
-#include <Events/MapCloseEvent.h>
 #include <Messages/PlayerRespawnRequest.h>
 #include <Messages/NotifyPlayerRespawn.h>
 #include <Messages/ShiftGridCellRequest.h>
@@ -55,39 +53,17 @@ PlayerService::PlayerService(World& aWorld, entt::dispatcher& aDispatcher, Trans
     m_playerLevelConnection = m_dispatcher.sink<PlayerLevelEvent>().connect<&PlayerService::OnPlayerLevelEvent>(this);
     m_partyJoinedConnection = aDispatcher.sink<PartyJoinedEvent>().connect<&PlayerService::OnPartyJoinedEvent>(this);
     m_partyLeftConnection = aDispatcher.sink<PartyLeftEvent>().connect<&PlayerService::OnPartyLeftEvent>(this);
-    m_playerPosition = m_dispatcher.sink<NotifyPlayerPosition>().connect<&PlayerService::OnNotifyPlayerPosition>(this);
-    m_playerPositionConnection = m_dispatcher.sink<NotifyPlayerPosition>().connect<&PlayerService::OnNotifyPlayerPosition>(this);
-    m_playerCellChangeConnection = m_dispatcher.sink<NotifyPlayerCellChanged>().connect<&PlayerService::OnNotifyPlayerCellChanged>(this);
-    m_playerSetWaypointConnection = m_dispatcher.sink<PlayerSetWaypointEvent>().connect<&PlayerService::OnPlayerSetWaypoint>(this);
-    m_playerDelWaypointConnection =m_dispatcher.sink<PlayerDelWaypointEvent>().connect<&PlayerService::OnPlayerDelWaypoint>(this);
-    m_mapOpenConnection = m_dispatcher.sink<MapOpenEvent>().connect<&PlayerService::OnMapOpen>(this);
-    m_mapCloseConnection = m_dispatcher.sink<MapCloseEvent>().connect<&PlayerService::OnMapClose>(this);
 }
 
-
-// TODO: this whole thing should probably be a util function by now
-TESObjectCELL* PlayerService::GetCell(const GameId& acCellId, const GameId& acWorldSpaceId, const GridCellCoords& acCenterCoords) const noexcept
+namespace
 {
-    auto& modSystem = m_world.GetModSystem();
-    uint32_t cellId = modSystem.GetGameId(acCellId);
-    TESObjectCELL* pCell = Cast<TESObjectCELL>(TESForm::GetById(cellId));
+    bool isDeathSystemEnabled = true;
+    bool knockdownStart = false;
+    double knockdownTimer = 0.0;
 
-    if (!pCell)
-    {
-        const uint32_t cWorldSpaceId = m_world.GetModSystem().GetGameId(acWorldSpaceId);
-        TESWorldSpace* const pWorldSpace = Cast<TESWorldSpace>(TESForm::GetById(cWorldSpaceId));
-        if (pWorldSpace)
-            pCell = pWorldSpace->LoadCell(acCenterCoords.X, acCenterCoords.Y);
-    }
-
-    return pCell;
+    bool godmodeStart = false;
+    double godmodeTimer = 0.0;
 }
-
-static bool knockdownStart = false;
-static double knockdownTimer = 0.0;
-
-static bool godmodeStart = false;
-static double godmodeTimer = 0.0;
 
 void PlayerService::OnUpdate(const UpdateEvent& acEvent) noexcept
 {
@@ -95,34 +71,10 @@ void PlayerService::OnUpdate(const UpdateEvent& acEvent) noexcept
     RunPostDeathUpdates(acEvent.Delta);
     RunDifficultyUpdates();
     RunLevelUpdates();
-    RunMapUpdates();
 }
 
 void PlayerService::OnConnected(const ConnectedEvent& acEvent) noexcept
 {
-    //Create Dummy Map Markers
-    for (int i = 0; i < m_initDummyMarkers; i++)
-    {
-        CreateDummyMarker();
-    }
-
-    // TODO: a MapService is warranted at this point.
-    m_waypoint = TESObjectREFR::New();
-    m_waypoint->SetBaseForm(TESForm::GetById(0x10));
-    m_waypoint->SetSkipSaveFlag(true);
-    m_waypoint->position.x = -INTMAX_MAX;
-    m_waypoint->position.y = -INTMAX_MAX;
-
-    m_waypointData = MapMarkerData::New();
-    m_waypointData->name.value.Set("Custom Destination");
-    m_waypointData->cOriginalFlags = m_waypointData->cFlags = MapMarkerData::Flag::VISIBLE;
-    m_waypointData->sType = MapMarkerData::Type::kCustomMarker; // "custom destination" marker either 66 or 0
-    m_waypoint->extraData.SetMarkerData(m_waypointData);
-
-    uint32_t handle;
-    m_waypoint->GetHandle(handle);
-    PlayerCharacter::Get()->AddMapmarkerRef(handle);
-
     // TODO: SkyrimTogether.esm
     TESGlobal* pKillMove = Cast<TESGlobal>(TESForm::GetById(0x100F19));
     pKillMove->f = 0.f;
@@ -165,16 +117,6 @@ void PlayerService::OnDisconnected(const DisconnectedEvent& acEvent) noexcept
     float* vatsTargetingMult = Settings::GetVATSSelectTargetTimeMultiplier();
     *vatsTargetingMult = 0.04f;
 #endif
-
-    for (auto it = m_mapHandles.begin(); it != m_mapHandles.end(); it++)
-    {
-        DeleteMarkerDummy(it->handle);
-    }
-    m_mapHandles.clear();
-
-    if (m_waypoint)
-        m_waypoint->Delete();
-    m_waypoint = nullptr;
 }
 
 void PlayerService::OnServerSettingsReceived(const ServerSettings& acSettings) noexcept
@@ -263,80 +205,6 @@ void PlayerService::OnPlayerLevelEvent(const PlayerLevelEvent& acEvent) const no
     m_transport.Send(request);
 }
 
-void PlayerService::OnPlayerSetWaypoint(const PlayerSetWaypointEvent& acMessage) noexcept
-{
-
-    if (!m_transport.IsConnected())
-        return;
-
-    m_waypointActive = true;
-    m_waypoint->position.x = -INTMAX_MAX;
-    m_waypoint->position.y = -INTMAX_MAX;
-
-    RequestSetWaypoint request = {};
-    request.Position = acMessage.Position;
-    m_transport.Send(request);
-
-    NiPoint3 Position = {};
-    Position.x = acMessage.Position.x;
-    Position.y = acMessage.Position.y;
-    auto* pPlayerWorldSpace = PlayerCharacter::Get()->GetWorldSpace();
-    SetWaypoint(PlayerCharacter::Get(), &Position, pPlayerWorldSpace);
-}
-
-void PlayerService::OnPlayerDelWaypoint(const PlayerDelWaypointEvent& acMessage) noexcept
-{
-    if (!m_transport.IsConnected())
-        return;
-
-    m_waypointActive = false;
-
-    RequestDelWaypoint request = {};
-    m_transport.Send(request);
-}
-
-void PlayerService::OnNotifyPlayerDelWaypoint(const NotifyDelWaypoint& acMessage) noexcept
-{
-    m_waypoint->position.x = -INTMAX_MAX;
-    m_waypoint->position.y = -INTMAX_MAX;
-}
-
-void PlayerService::OnNotifyPlayerSetWaypoint(const NotifySetWaypoint& acMessage) noexcept
-{
-    if (!m_inMap)
-    {
-        NiPoint3 pos{};
-        pos.x = acMessage.Position.x;
-        pos.y = acMessage.Position.y;
-        SetWaypoint(PlayerCharacter::Get(), &pos, PlayerCharacter::Get()->GetWorldSpace());
-        return;
-    }
-    m_waypointActive = false;
-    RemoveWaypoint(PlayerCharacter::Get());
-    m_waypoint->position = acMessage.Position;
-}
-
-void PlayerService::OnNotifyPlayerPosition(const NotifyPlayerPosition& acMessage) const noexcept
-{
-    MapMenu* pMapMenu = reinterpret_cast<decltype(pMapMenu)>(UI::Get()->FindMenuByName("MapMenu"));
-    spdlog::info(pMapMenu == nullptr);
-    SetWaypoint(pMapMenu, acMessage.Position.x, acMessage.Position.y);
-}
-
-// on join/leave, add to our array...
-void PlayerService::OnPlayerMapMarkerUpdateEvent(const PlayerMapMarkerUpdateEvent& acEvent) const noexcept
-{
-    // for only players that are in the same worldspace as we are...
-    for (int32_t handle : m_ownedMaphandles)
-    {
-        #if 0
-        // fetch smart pointer from handle function
-        // then fetch all players,
-        if worldspace = remoteworldspace
-
-            #endif
-    }
-}
 void PlayerService::OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept
 {
     // TODO: this can be done a bit prettier
@@ -353,10 +221,6 @@ void PlayerService::OnPartyJoinedEvent(const PartyJoinedEvent& acEvent) noexcept
 
 void PlayerService::OnPartyLeftEvent(const PartyLeftEvent& acEvent) noexcept
 {
-    m_waypointData->cOriginalFlags = m_waypointData->cFlags = MapMarkerData::Flag::VISIBLE;
-    m_waypoint->position.x = acMessage.Position.x;
-    m_waypoint->position.y = acMessage.Position.y;
-
     // TODO: this can be done a bit prettier
 #if TP_SKYRIM64
     if (World::Get().GetTransport().IsConnected())
@@ -416,19 +280,6 @@ void PlayerService::RunRespawnUpdates(const double acDeltaTime) noexcept
         m_transport.Send(PlayerRespawnRequest());
 
         s_startTimer = false;
-
-#if TP_SKYRIM64
-        auto* pEquipManager = EquipManager::Get();
-        TESForm* pSpell = TESForm::GetById(m_cachedMainSpellId);
-        if (pSpell)
-            pEquipManager->EquipSpell(pPlayer, pSpell, 0);
-        pSpell = TESForm::GetById(m_cachedSecondarySpellId);
-        if (pSpell)
-            pEquipManager->EquipSpell(pPlayer, pSpell, 1);
-        pSpell = TESForm::GetById(m_cachedPowerId);
-        if (pSpell)
-            pEquipManager->EquipShout(pPlayer, pSpell);
-#endif
     }
 }
 
@@ -507,76 +358,9 @@ void PlayerService::RunLevelUpdates() const noexcept
     }
 }
 
-void PlayerService::RunMapUpdates() noexcept
-{
-
-    // Update map open status
-    const VersionDbPtr<int> inMapAddr(403437);
-    int* inMap = reinterpret_cast<decltype(inMap)>(inMapAddr.Get());
-
-    // Map Open/Close
-    if (*inMap != m_inMap)
-    {
-        switch (*inMap)
-        {
-
-            // Map was closed
-            case 0:
-                World::Get().GetRunner().Trigger(MapCloseEvent());
-
-            // Map was opened
-            case 1:
-                World::Get().GetRunner().Trigger(MapOpenEvent());
-        }
-    }
-
-    m_inMap = *inMap == 1;
-}
-
 void PlayerService::ToggleDeathSystem(bool aSet) noexcept
 {
     m_isDeathSystemEnabled = aSet;
 
     PlayerCharacter::Get()->SetPlayerRespawnMode(aSet);
-}
-
-bool PlayerService::DeleteDummyMarker(const uint32_t acHandle) noexcept
-{
-    auto* pDummyPlayer = TESObjectREFR::GetByHandle(acHandle);
-    if (!pDummyPlayer)
-        return false;
-
-    pDummyPlayer->Delete();
-
-    PlayerCharacter::Get()->RemoveMapmarkerRef(acHandle);
-
-    return true;
-}
-
-void PlayerService::CreateDummyMarker() noexcept
-{
-    TESObjectREFR* dummyMark = TESObjectREFR::New();
-    dummyMark->SetBaseForm(TESForm::GetById(0x10));
-    dummyMark->SetSkipSaveFlag(true);
-    dummyMark->position.x = -INTMAX_MAX;
-    dummyMark->position.y = -INTMAX_MAX;
-
-    MapMarkerData* dummyData = MapMarkerData::New();
-    dummyData->cOriginalFlags = dummyData->cFlags = MapMarkerData::Flag::VISIBLE;
-    dummyData->sType = MapMarkerData::Type::kMultipleQuest; // "custom destination" marker either 66 or 0
-    dummyMark->extraData.SetMarkerData(dummyData);
-
-    uint32_t handle;
-    dummyMark->GetHandle(handle);
-    PlayerCharacter::Get()->AddMapmarkerRef(handle);
-
-    m_dummyHandles.push_back(handle);
-}
-
-uint32_t PlayerService::GetDummyMarker() noexcept
-{
-    if (m_dummyHandles.empty())
-        return m_invalidHandle;
-
-    return m_dummyHandles.back();
 }

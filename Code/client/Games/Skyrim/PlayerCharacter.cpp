@@ -43,7 +43,7 @@ void PlayerCharacter::SetGodMode(bool aSet) noexcept
     *bGodMode.Get() = aSet;
 }
 
-void PlayerCharacter::SetDifficulty(const int32_t aDifficulty) noexcept
+void PlayerCharacter::SetDifficulty(const int32_t aDifficulty, bool aForceUpdate, bool aExpectGameDataLoaded) noexcept
 {
     if (aDifficulty > 5 || aDifficulty < 0)
         return;

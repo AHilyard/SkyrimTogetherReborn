@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Games/ExtraData.h>
+#include <ExtraData.h>
 #include <ExtraData/ExtraSoul.h>
 #include <ExtraData/ExtraCharge.h>
 

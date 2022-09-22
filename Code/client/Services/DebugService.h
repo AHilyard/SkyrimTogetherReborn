@@ -61,6 +61,11 @@ private:
     void DrawProcessView();
     void DrawWeatherView();
 
+public:
+    bool m_showDebugStuff = false;
+
+private:
+
     entt::dispatcher& m_dispatcher;
     TransportService& m_transport;
     World& m_world;
@@ -80,7 +85,6 @@ private:
     entt::scoped_connection m_drawImGuiConnection;
     entt::scoped_connection m_dialogueConnection;
 
-    bool m_showDebugStuff = false;
     bool m_showBuildTag = true;
     bool m_drawComponentsInWorldSpace = true;
 };
