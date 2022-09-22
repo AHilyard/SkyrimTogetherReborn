@@ -48,6 +48,7 @@ target("SkyrimServerRunner")
 
 target("FalloutServerRunner")
     set_basename("FalloutTogetherServer")
+    set_default(false)
     add_defines(
         "TARGET_FT",
         "TARGET_PREFIX=\"ft\"")

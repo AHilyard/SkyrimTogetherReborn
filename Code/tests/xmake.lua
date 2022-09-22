@@ -2,6 +2,7 @@
 target("TPTests")
     set_kind("binary")
     set_group("Tests")
+    set_default(false)
     add_defines("TP_SKYRIM=1")
     add_includedirs(
         ".", "../encoding")

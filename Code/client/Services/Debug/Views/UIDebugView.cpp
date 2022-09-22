@@ -28,7 +28,6 @@ static void SpawnMapmarker(const char* apName)
 {
     // pos will later be fetched through TESObjectREFR::GetLookingAtLocation for scaleform
     TESObjectREFR* pRefr = TESObjectREFR::New();
-    pRefr->SetTemporary();
     pRefr->rotation = {};
     pRefr->position = PlayerCharacter::Get()->position;
     g_TestMapmarkerHandle = SpawnOurMapmarker(pRefr, apName, MapMarkerData::Type::kMousePointer);
@@ -37,8 +36,6 @@ static void SpawnMapmarker(const char* apName)
 static void SpawnMapmarker2(const char* apName, float posoff, int i)
 {
     TESObjectREFR* pRefr = TESObjectREFR::New();
-    pRefr->SetTemporary();
-
     pRefr->rotation = {};
     pRefr->position = PlayerCharacter::Get()->position;
     pRefr->position.x += posoff;

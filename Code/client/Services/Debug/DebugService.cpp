@@ -48,8 +48,6 @@
 
 #include <Games/Misc/SubtitleManager.h>
 #include <Games/Overrides.h>
-#include <Camera/PlayerCamera.h>
-#include <ExtraData/ExtraMapMarker.h>
 #include <OverlayApp.hpp>
 
 #include <BranchInfo.h>
@@ -69,10 +67,10 @@
 #include <Camera/PlayerCamera.h>
 #include <AI/Movement/PlayerControls.h>
 #include <Games/Skyrim/Interface/IMenu.h>
-#include <Camera/PlayerCamera.h>
 #include <DefaultObjectManager.h>
 #include <Misc/InventoryEntry.h>
 #include <Misc/MiddleProcess.h>
+#include <ExtraData/ExtraMapMarker.h>
 #endif
 
 #include <imgui.h>
@@ -224,6 +222,8 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
             s_f8Pressed = true;
 
             PlayerCharacter* pPlayer = PlayerCharacter::Get();
+
+#if TP_SKYRIM64
             for (uint32_t handle : pPlayer->CurrentMapmarkerRefHandles)
             {
                 TESObjectREFR* pRefr = TESObjectREFR::GetByHandle(handle);
@@ -234,9 +234,9 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
                 const char* pEditorId = pData->pMarkerData->name.value.AsAscii();
                 spdlog::critical("Form id: {:X}, name: {}", pRefr->formID, pEditorId ? pEditorId : "NONE");
             }
-
-            Actor* pActor = Cast<Actor>(TESForm::GetById(0x1a677));
-            pActor->MoveTo(PlayerCharacter::Get()->parentCell, PlayerCharacter::Get()->position);
+#else
+            spdlog::info("{}", pPlayer->formID);
+#endif
 
         #if 0
             static bool s_enabled = true;

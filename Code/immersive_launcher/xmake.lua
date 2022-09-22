@@ -76,6 +76,7 @@ target("SkyrimImmersiveLauncher")
 
 target("FalloutImmersiveLauncher")
     set_basename("FalloutTogether")
+    set_default(false)
     add_defines(
         "TARGET_FT",
         "TARGET_PREFIX=\"ft\"")

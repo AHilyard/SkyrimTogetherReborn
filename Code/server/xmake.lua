@@ -49,6 +49,7 @@ target("SkyrimTogetherServer")
 
 target("FalloutTogetherServer")
     set_basename("FTServer")
+    set_default(false)
     add_defines(
         "TARGET_FT",
         "TP_FALLOUT=1",
