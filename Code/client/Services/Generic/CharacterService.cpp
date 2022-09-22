@@ -495,7 +495,7 @@ void CharacterService::OnCharacterSpawn(const CharacterSpawnRequest& acMessage) 
     if (pActor->IsDead() != acMessage.IsDead)
         acMessage.IsDead ? pActor->Kill() : pActor->Respawn();
 
-    spdlog::info("Spawn Reqeust Is summon {}", acMessage.IsPlayerSummon);
+    spdlog::info("Spawn Request Is summon {}", acMessage.IsPlayerSummon);
 
 #if TP_SKYRIM64
     if (acMessage.IsPlayerSummon)
@@ -1589,7 +1589,7 @@ void CharacterService::RunRemoteUpdates() noexcept
         if (pActor->IsDead() != waitingFor3D.SpawnRequest.IsDead)
             waitingFor3D.SpawnRequest.IsDead ? pActor->Kill() : pActor->Respawn();
 
-        toRemove.push_back(entity);  
+        toRemove.push_back(entity);
 
         spdlog::info("Applied 3D for actor, form id: {:X}", pActor->formID);
     }
