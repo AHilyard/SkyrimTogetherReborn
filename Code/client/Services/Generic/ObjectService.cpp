@@ -386,6 +386,11 @@ void ObjectService::OnLockChangeNotify(const NotifyLockChange& acMessage) noexce
     pLock->lockLevel = acMessage.LockLevel;
     pLock->SetLock(acMessage.IsLocked);
     pObject->LockChange();
+
+    if (!acMessage.IsLocked)
+    {
+        pObject->Activate(nullptr, 0, nullptr, 1, 0);
+    }
 }
 
 void ObjectService::OnScriptAnimationEvent(const ScriptAnimationEvent& acEvent) noexcept
