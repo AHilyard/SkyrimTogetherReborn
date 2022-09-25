@@ -15,11 +15,13 @@ struct RequestHealthChangeBroadcast final : ClientMessage
 
     bool operator==(const RequestHealthChangeBroadcast& acRhs) const noexcept
     {
-        return Id == acRhs.Id && 
+        return Id == acRhs.Id &&
+               AttackerId == acRhs.AttackerId &&
                DeltaHealth == acRhs.DeltaHealth &&
                GetOpcode() == acRhs.GetOpcode();
     }
 
     uint32_t Id;
+    uint32_t AttackerId;
     float DeltaHealth;
 };

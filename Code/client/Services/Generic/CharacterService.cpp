@@ -325,7 +325,9 @@ void CharacterService::OnAssignCharacter(const AssignCharacterResponse& acMessag
         }
 
         if (pActor->IsDead() != acMessage.IsDead)
+        {
             acMessage.IsDead ? pActor->Kill() : pActor->Respawn();
+        }
 
         if (pActor->actorState.IsWeaponDrawn() != acMessage.IsWeaponDrawn)
             m_weaponDrawUpdates[formIdComponent->Id] = {acMessage.IsWeaponDrawn};
@@ -375,7 +377,9 @@ void CharacterService::OnAssignCharacter(const AssignCharacterResponse& acMessag
         pActor->SetActorInventory(acMessage.CurrentInventory);
 
         if (pActor->IsDead() != acMessage.IsDead)
+        {
             acMessage.IsDead ? pActor->Kill() : pActor->Respawn();
+        }
 
         m_weaponDrawUpdates[pActor->formID] = {acMessage.IsWeaponDrawn};
 
@@ -493,7 +497,9 @@ void CharacterService::OnCharacterSpawn(const CharacterSpawnRequest& acMessage) 
     }
 
     if (pActor->IsDead() != acMessage.IsDead)
+    {
         acMessage.IsDead ? pActor->Kill() : pActor->Respawn();
+    }
 
     spdlog::info("Spawn Request Is summon {}", acMessage.IsPlayerSummon);
 
@@ -553,7 +559,9 @@ void CharacterService::OnRemoteSpawnDataReceived(const NotifySpawnData& acMessag
     m_weaponDrawUpdates[pActor->formID] = {acMessage.IsWeaponDrawn};
 
     if (pActor->IsDead() != acMessage.IsDead)
+    {
         acMessage.IsDead ? pActor->Kill() : pActor->Respawn();
+    }
 
     spdlog::info("Applied remote spawn data, actor form id: {:X}", pActor->formID);
 }
@@ -1480,7 +1488,9 @@ Actor* CharacterService::CreateCharacterForEntity(entt::entity aEntity) const no
     }
 
     if (pActor->IsDead() != acMessage.IsDead)
+    {
         acMessage.IsDead ? pActor->Kill() : pActor->Respawn();
+    }
 
     spdlog::info("Spawned character for entity, server id: {:X}", remoteComponent.Id);
 
@@ -1587,7 +1597,9 @@ void CharacterService::RunRemoteUpdates() noexcept
         m_weaponDrawUpdates[pActor->formID] = {waitingFor3D.SpawnRequest.IsWeaponDrawn};
 
         if (pActor->IsDead() != waitingFor3D.SpawnRequest.IsDead)
+        {
             waitingFor3D.SpawnRequest.IsDead ? pActor->Kill() : pActor->Respawn();
+        }
 
         toRemove.push_back(entity);
 

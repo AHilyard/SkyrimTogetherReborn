@@ -201,6 +201,7 @@ void ActorValueService::OnHealthChange(const HealthChangeEvent& acEvent) noexcep
 
     RequestHealthChangeBroadcast requestHealthChange;
     requestHealthChange.Id = serverId;
+    requestHealthChange.AttackerId = acEvent.HitterId;
     requestHealthChange.DeltaHealth = acEvent.DeltaHealth;
 
     m_transport.Send(requestHealthChange);
@@ -239,7 +240,7 @@ void ActorValueService::RunSmallHealthUpdates() noexcept
 void ActorValueService::RunDeathStateUpdates() noexcept
 {
     static std::chrono::steady_clock::time_point lastSendTimePoint;
-    constexpr auto cDelayBetweenUpdates = 100ms;
+    constexpr auto cDelayBetweenUpdates = 200ms;
 
     const auto now = std::chrono::steady_clock::now();
     if (now - lastSendTimePoint < cDelayBetweenUpdates)
@@ -304,7 +305,13 @@ void ActorValueService::OnHealthChangeBroadcast(const NotifyHealthChangeBroadcas
         ActorExtension* pExtension = pActor->GetExtension();
         // Players should never be killed
         if (!pExtension->IsPlayer())
-            pActor->Kill();
+        {
+            Actor* pAttacker = acMessage.AttackerId == 0 ? nullptr : Utils::GetByServerId<Actor>(acMessage.AttackerId);
+
+            // Hacky way to fix corpse desync.
+            pActor->MoveTo(pActor->parentCell, pActor->position);
+            pActor->Kill(pAttacker);
+        }
     }
 
     // TODO(cosideci): find fix for player health sync so this can be used again
@@ -405,6 +412,8 @@ void ActorValueService::OnDeathStateChange(const NotifyDeathStateChange& acMessa
         return;
 
     if (pActor->IsDead() != acMessage.IsDead)
+    {
         acMessage.IsDead ? pActor->Kill() : pActor->Respawn();
+    }
 }
 

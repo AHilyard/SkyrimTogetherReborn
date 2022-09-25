@@ -539,15 +539,17 @@ bool Actor::IsDragon() const noexcept
     return AnimationGraphDescriptor_BHR_Master::m_key == pManager->GetDescriptorKey();
 }
 
-void Actor::Kill() noexcept
+void Actor::Kill(Actor* apAttacker) noexcept
 {
     // Never kill players
     ActorExtension* pExtension = GetExtension();
     if (pExtension->IsPlayer())
+    {
         return;
+    }
 
     // TODO: these args are kind of bogus of course
-    KillImpl(nullptr, 100.f, true, true);
+    KillImpl(apAttacker, 100.f, true, true);
 
     // Papyrus kill will not go through if it is queued by a kill move
     /*
@@ -619,6 +621,7 @@ bool TP_MAKE_THISCALL(HookDamageActor, Actor, float aDamage, Actor* apHitter, bo
     float currentHealth = apThis->GetActorValue(ActorValueInfo::kHealth);
     bool wouldKill = (currentHealth - realDamage) <= 0.f;
 
+
     const auto* pExHittee = apThis->GetExtension();
     if (pExHittee->IsLocalPlayer())
     {
@@ -628,7 +631,7 @@ bool TP_MAKE_THISCALL(HookDamageActor, Actor, float aDamage, Actor* apHitter, bo
                 return false;
         }
 
-        World::Get().GetRunner().Trigger(HealthChangeEvent(apThis->formID, -realDamage));
+        World::Get().GetRunner().Trigger(HealthChangeEvent(apThis->formID, apHitter ? apHitter->formID : 0, -realDamage));
         return TiltedPhoques::ThisCall(RealDamageActor, apThis, aDamage, apHitter, aKillMove);
     }
     else if (pExHittee->IsRemotePlayer())
@@ -641,18 +644,25 @@ bool TP_MAKE_THISCALL(HookDamageActor, Actor, float aDamage, Actor* apHitter, bo
         const auto* pExHitter = apHitter->GetExtension();
         if (pExHitter->IsLocalPlayer())
         {
-            World::Get().GetRunner().Trigger(HealthChangeEvent(apThis->formID, -realDamage));
+            World::Get().GetRunner().Trigger(HealthChangeEvent(apThis->formID, apHitter->formID, -realDamage));
             return TiltedPhoques::ThisCall(RealDamageActor, apThis, aDamage, apHitter, aKillMove);
         }
         if (pExHitter->IsRemotePlayer())
         {
+            // If this foe will die from the hit, ensure its position is synced first.
+            if (wouldKill)
+            {
+                apThis->SetPosition(apThis->position, true);
+            }
+            
             return wouldKill;
         }
     }
 
     if (pExHittee->IsLocal())
     {
-        World::Get().GetRunner().Trigger(HealthChangeEvent(apThis->formID, -realDamage));
+        World::Get().GetRunner().Trigger(
+            HealthChangeEvent(apThis->formID, apHitter ? apHitter->formID : 0, - realDamage));
         return TiltedPhoques::ThisCall(RealDamageActor, apThis, aDamage, apHitter, aKillMove);
     }
     else
@@ -677,7 +687,7 @@ void TP_MAKE_THISCALL(HookApplyActorEffect, ActiveEffect, Actor* apTarget, float
                 const auto pExTarget = apTarget->GetExtension();
                 if (pExTarget->IsLocal())
                 {
-                    World::Get().GetRunner().Trigger(HealthChangeEvent(apTarget->formID, aEffectValue));
+                    World::Get().GetRunner().Trigger(HealthChangeEvent(apTarget->formID, pValueModEffect->pSource ? pValueModEffect->pSource->formID : 0, aEffectValue));
                     return TiltedPhoques::ThisCall(RealApplyActorEffect, apThis, apTarget, aEffectValue, unk1);
                 }
                 return;
@@ -704,7 +714,7 @@ void* TP_MAKE_THISCALL(HookRegenAttributes, Actor, int aId, float aRegenValue)
         return 0;
     }
 
-    World::Get().GetRunner().Trigger(HealthChangeEvent(apThis->formID, aRegenValue));
+    World::Get().GetRunner().Trigger(HealthChangeEvent(apThis->formID, 0, aRegenValue));
     return TiltedPhoques::ThisCall(RealRegenAttributes, apThis, aId, aRegenValue);
 }
 

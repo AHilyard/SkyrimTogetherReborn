@@ -30,6 +30,7 @@ target(name)
         add_deps("SkyrimEncoding")
     end
     if name == "FalloutTogetherClient" then
+        set_default(false)
         add_files("Games/Fallout4/**.cpp")
         add_headerfiles("Games/Fallout4/**.h")
         -- rather hacky:

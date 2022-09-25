@@ -81,6 +81,7 @@ target("FalloutImmersiveLauncher")
         "TARGET_PREFIX=\"ft\"")
     add_deps("FalloutTogetherClient")
     add_ldflags("/WHOLEARCHIVE:FalloutTogetherClient", { force = true })
+    set_default(false)
     build_launcher()
     
 

@@ -88,6 +88,7 @@ void ActorValueService::OnHealthChangeBroadcast(const PacketEvent<RequestHealthC
 
     NotifyHealthChangeBroadcast notify;
     notify.Id = message.Id;
+    notify.AttackerId = message.AttackerId;
     notify.DeltaHealth = message.DeltaHealth;
 
     const entt::entity cEntity = static_cast<entt::entity>(message.Id);

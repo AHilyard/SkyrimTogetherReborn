@@ -3,6 +3,7 @@
 void NotifyHealthChangeBroadcast::SerializeRaw(TiltedPhoques::Buffer::Writer& aWriter) const noexcept
 {
     Serialization::WriteVarInt(aWriter, Id);
+    Serialization::WriteVarInt(aWriter, AttackerId);
     Serialization::WriteFloat(aWriter, DeltaHealth);
 }
 
@@ -11,5 +12,6 @@ void NotifyHealthChangeBroadcast::DeserializeRaw(TiltedPhoques::Buffer::Reader& 
     ServerMessage::DeserializeRaw(aReader);
 
     Id = Serialization::ReadVarInt(aReader) & 0xFFFFFFFF;
+    AttackerId = Serialization::ReadVarInt(aReader) & 0xFFFFFFFF;
     DeltaHealth = Serialization::ReadFloat(aReader);
 }
